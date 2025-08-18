@@ -42,7 +42,7 @@ def generar_tabla(estimado_1rm, formula, ejercicio=None):
     return pd.DataFrame(data, columns=["Reps", f"Peso ({formula})"])
 
 
-st.title("💪 Calculadora de 1RM")
+st.title("💪 Calculadora de 1RM (peso máximo a 1 repetición).")
 st.markdown("Estima tu **máximo para una repetición (1RM)** y obtén una tabla de pesos y repeticiones.")
 
 with st.container(border=True):
@@ -105,7 +105,7 @@ if peso_total > 0 and reps > 0:
     df_merge = df_epley.merge(df_brzycki, on="Reps").merge(df_lander, on="Reps")
     df_merge["Promedio"] = df_merge[[f"Peso (Epley)", f"Peso (Brzycki)", f"Peso (Lander)"]].mean(axis=1).round(1)
     
-    df_consolidada = df_merge[["Reps", "Promedio"]].rename(columns={"Promedio": "Peso Sugerido (kg)"})
+    df_consolidada = df_merge[["Reps", "Promedio"]].rename(columns={"Promedio": "Peso Estimado (kg)"})
 
     st.subheader("Tabla de Pesos y Repeticiones", anchor=False)
 
