@@ -42,7 +42,7 @@ def generar_tabla(estimado_1rm, formula, ejercicio=None):
     return pd.DataFrame(data, columns=["Reps", f"Peso ({formula})"])
 
 
-st.title("💪 Calculadora de 1RM (peso máximo a 1 repetición).")
+st.title("💪 Calculadora de 1RM")
 st.markdown("Estima tu **máximo para una repetición (1RM)** y obtén una tabla de pesos y repeticiones.")
 
 with st.container(border=True):
@@ -86,7 +86,7 @@ if peso_total > 0 and reps > 0:
 
     promedio_1rm = (rm_epley + rm_brzycki + rm_lander) / 3
 
-    st.subheader("Estimación de tu 1RM", anchor=False)
+    st.subheader("Estimación de tu 1RM (peso máximo a 1 repetición).", anchor=False)
     
     col1, col2, col3, col4 = st.columns(4)
     with col1:
