@@ -190,7 +190,7 @@ if peso_total > 0 and reps > 0:
 
     df_merge = df_epley.merge(df_brzycki, on="Reps").merge(df_lander, on="Reps")
     df_merge["Promedio"] = (
-        df_merge[[f"Peso (Epley)", f"Peso (Brzycki)", f"Peso (Lander)"]]
+        df_merge[["Peso (Epley)", "Peso (Brzycki)", "Peso (Lander)"]]
         .mean(axis=1)
         .round(1)
     )
