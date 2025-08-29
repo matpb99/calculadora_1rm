@@ -53,7 +53,7 @@ rep_factors = {
         9: 0.81,
         10: 0.79,
     },
-    "Dominadas Lastre": {
+    "Dominadas con lastre": {
         1: 1.00,
         2: 0.95,
         3: 0.93,
@@ -65,7 +65,7 @@ rep_factors = {
         9: 0.77,
         10: 0.75,
     },
-    "Fondos Lastre": {
+    "Fondos con lastre": {
         1: 1.00,
         2: 0.95,
         3: 0.93,
@@ -80,7 +80,9 @@ rep_factors = {
 }
 
 
-def generar_tabla(estimado_1rm, formula, ejercicio=None):
+def generar_tabla(
+    estimado_1rm, formula, ejercicio=None, peso_corporal=0, es_lastre=False
+):
     data = []
     ejercicio_factor = ejercicio if ejercicio in rep_factors else None
 
@@ -100,6 +102,10 @@ def generar_tabla(estimado_1rm, formula, ejercicio=None):
                     peso = estimado_1rm * (37 - reps) / 36
                 elif formula == "Lander":
                     peso = (estimado_1rm * (101.3 - 2.67123 * reps)) / 100
+
+        if es_lastre:
+            peso = max(0, peso - peso_corporal)
+
         data.append([reps, round(peso, 2)])
     return pd.DataFrame(data, columns=["Reps", f"Peso ({formula})"])
 
@@ -109,7 +115,7 @@ st.markdown(
     "Estima tu **máximo para una repetición (1RM)** y obtén una tabla de pesos y repeticiones."
 )
 
-with st.container(border=True):
+with st.container():
     st.header("🏋️‍♂️ Ingresa tus datos", anchor=False)
 
     ejercicio = st.selectbox(
@@ -125,7 +131,6 @@ with st.container(border=True):
     )
 
     col1, col2 = st.columns(2)
-
     peso_total = 0
     peso_corporal = 0
 
@@ -136,7 +141,7 @@ with st.container(border=True):
             )
         with col2:
             lastre = st.number_input(
-                "Lastre añadido (kg)", min_value=5, step=1, value=5
+                "Lastre añadido (kg)", min_value=0, step=1, value=5
             )
         peso_total = peso_corporal + lastre
     else:
@@ -146,12 +151,7 @@ with st.container(border=True):
             )
 
     reps = st.number_input(
-        "Repeticiones realizadas",
-        min_value=1,
-        max_value=10,
-        step=1,
-        value=3,
-        help="El número de repeticiones completadas.",
+        "Repeticiones realizadas", min_value=1, max_value=10, step=1, value=3
     )
 
 if peso_total > 0 and reps > 0:
@@ -160,23 +160,12 @@ if peso_total > 0 and reps > 0:
     rm_epley = epley(peso_total, reps)
     rm_brzycki = brzycki(peso_total, reps)
     rm_lander = lander(peso_total, reps)
-
-    if ejercicio in ["Dominadas con lastre", "Fondos con lastre"]:
-        rm_epley -= peso_corporal
-        rm_brzycki -= peso_corporal
-        rm_lander -= peso_corporal
-
     promedio_1rm = (rm_epley + rm_brzycki + rm_lander) / 3
 
     st.subheader("Estimación de tu 1RM (peso máximo a 1 repetición).", anchor=False)
-
     col1, col2, col3, col4 = st.columns(4)
     with col1:
-        st.metric(
-            "⭐ Promedio 1RM",
-            f"{promedio_1rm:.1f} kg",
-            help="El promedio de las tres fórmulas.",
-        )
+        st.metric("⭐ Promedio 1RM", f"{promedio_1rm:.1f} kg")
     with col2:
         st.metric("Epley", f"{rm_epley:.1f} kg")
     with col3:
@@ -184,9 +173,16 @@ if peso_total > 0 and reps > 0:
     with col4:
         st.metric("Lander", f"{rm_lander:.1f} kg")
 
-    df_epley = generar_tabla(rm_epley, "Epley", ejercicio)
-    df_brzycki = generar_tabla(rm_brzycki, "Brzycki", ejercicio)
-    df_lander = generar_tabla(rm_lander, "Lander", ejercicio)
+    es_lastre = ejercicio in ["Dominadas con lastre", "Fondos con lastre"]
+    if es_lastre:
+        lastre_equivalente = max(0, promedio_1rm - peso_corporal)
+        st.metric("1RM en lastre (estimado)", f"{lastre_equivalente:.1f} kg")
+
+    df_epley = generar_tabla(rm_epley, "Epley", ejercicio, peso_corporal, es_lastre)
+    df_brzycki = generar_tabla(
+        rm_brzycki, "Brzycki", ejercicio, peso_corporal, es_lastre
+    )
+    df_lander = generar_tabla(rm_lander, "Lander", ejercicio, peso_corporal, es_lastre)
 
     df_merge = df_epley.merge(df_brzycki, on="Reps").merge(df_lander, on="Reps")
     df_merge["Promedio"] = (
@@ -200,8 +196,19 @@ if peso_total > 0 and reps > 0:
     )
 
     st.subheader("Tabla de Pesos y Repeticiones", anchor=False)
-
     st.dataframe(df_consolidada, use_container_width=True, hide_index=True)
+
+    st.subheader("📈 Progresión reps vs peso")
+
+    df_plot = df_consolidada.set_index("Reps")
+
+    st.line_chart(
+        df_plot,
+        height=400,
+        y_label="Peso (kg)",
+        x_label="Repeticiones",
+        use_container_width=True,
+    )
 
     with st.expander("Ver tablas de cada fórmula individualmente"):
         col1, col2, col3 = st.columns(3)
